@@ -1,0 +1,1 @@
+## Aplication package root directory

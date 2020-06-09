@@ -1,0 +1,1 @@
+## This project is skeleton for golang project follow Clean Architecture  
