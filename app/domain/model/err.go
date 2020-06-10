@@ -5,5 +5,7 @@ import (
 )
 
 var (
-	ErrNotFound = fmt.Errorf("not found")
+	ErrNotFound      = fmt.Errorf("not found")
+	ErrInvalidAmount = fmt.Errorf("invalid amount")
+	ErrInvalid       = fmt.Errorf("invalid")
 )

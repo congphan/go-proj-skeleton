@@ -37,3 +37,11 @@ func ValidateTransactionType(t TransactionType) error {
 		return fmt.Errorf("%s: %w", t, ErrTransactionTypeInvalid)
 	}
 }
+
+func NewTransaction(accountID uint, amount decimal.Decimal, t TransactionType) *Transaction {
+	return &Transaction{
+		AccountID:       accountID,
+		Amount:          amount,
+		TransactionType: t,
+	}
+}

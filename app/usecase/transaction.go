@@ -7,6 +7,12 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type CreateTransaction struct {
+	AccountID       uint
+	Amount          decimal.Decimal
+	TransactionType model.TransactionType
+}
+
 type Transaction struct {
 	ID              uint
 	AccountID       uint

@@ -1,12 +1,18 @@
 package usecase
 
 import (
+	"errors"
+	"fmt"
+
+	"github.com/shopspring/decimal"
+
 	"go-prj-skeleton/app/domain/model"
 	"go-prj-skeleton/app/domain/repo"
 )
 
 type UserUsecase interface {
 	FindTransactions(userID uint, accountID *uint) ([]Transaction, error)
+	CreateTransaction(userID uint, t *CreateTransaction) (*Transaction, error)
 }
 
 type userUsecase struct {
@@ -54,4 +60,47 @@ func (u *userUsecase) FindTransactions(userID uint, accountID *uint) ([]Transact
 	}
 
 	return toTransactions(trans, accounts)
+}
+
+func (u *userUsecase) CreateTransaction(userID uint, t *CreateTransaction) (*Transaction, error) {
+	if err := model.ValidateTransactionType(t.TransactionType); err != nil {
+		return nil, err
+	}
+
+	zero := decimal.NewFromInt(0)
+	if t.Amount.LessThanOrEqual(zero) {
+		return nil, fmt.Errorf("%v: %w", t.Amount.String(), model.ErrInvalidAmount)
+	}
+
+	_, err := u.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	acc, err := u.accountRepo.FindByID(t.AccountID)
+	if err != nil {
+		if errors.Is(err, model.ErrNotFound) {
+			return nil, fmt.Errorf("account[%v] %w", t.AccountID, model.ErrInvalid)
+		}
+
+		return nil, err
+	}
+
+	if acc.UserID != userID {
+		return nil, fmt.Errorf("account[%v] %w", t.AccountID, model.ErrInvalid)
+	}
+
+	tran := model.NewTransaction(t.AccountID, t.Amount, t.TransactionType)
+	if err := u.transRepo.Create(tran); err != nil {
+		return nil, fmt.Errorf("persit transaction: %w", err)
+	}
+
+	return &Transaction{
+		ID:              tran.ID,
+		AccountID:       tran.AccountID,
+		Amount:          tran.Amount,
+		Bank:            acc.Bank,
+		TransactionType: tran.TransactionType,
+		CreatedAt:       tran.CreatedAt,
+	}, nil
 }

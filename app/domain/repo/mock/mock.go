@@ -284,6 +284,29 @@ func NewAccountRepoFindByUserInvocation(userID uint, ident1 []model.Account, ide
 	return invocation
 }
 
+// AccountRepoFindByIDInvocation represents a single call of FakeAccountRepo.FindByID
+type AccountRepoFindByIDInvocation struct {
+	Parameters struct {
+		Id uint
+	}
+	Results struct {
+		Ident1 model.Account
+		Ident2 error
+	}
+}
+
+// NewAccountRepoFindByIDInvocation creates a new instance of AccountRepoFindByIDInvocation
+func NewAccountRepoFindByIDInvocation(id uint, ident1 model.Account, ident2 error) *AccountRepoFindByIDInvocation {
+	invocation := new(AccountRepoFindByIDInvocation)
+
+	invocation.Parameters.Id = id
+
+	invocation.Results.Ident1 = ident1
+	invocation.Results.Ident2 = ident2
+
+	return invocation
+}
+
 // AccountRepoTestingT represents the methods of "testing".T used by charlatan Fakes.  It avoids importing the testing package.
 type AccountRepoTestingT interface {
 	Error(...interface{})
@@ -318,8 +341,10 @@ unexpected calls are made to FakeFindByUser.
 */
 type FakeAccountRepo struct {
 	FindByUserHook func(uint) ([]model.Account, error)
+	FindByIDHook   func(uint) (model.Account, error)
 
 	FindByUserCalls []*AccountRepoFindByUserInvocation
+	FindByIDCalls   []*AccountRepoFindByIDInvocation
 }
 
 // NewFakeAccountRepoDefaultPanic returns an instance of FakeAccountRepo with all hooks configured to panic
@@ -327,6 +352,9 @@ func NewFakeAccountRepoDefaultPanic() *FakeAccountRepo {
 	return &FakeAccountRepo{
 		FindByUserHook: func(uint) (ident1 []model.Account, ident2 error) {
 			panic("Unexpected call to AccountRepo.FindByUser")
+		},
+		FindByIDHook: func(uint) (ident1 model.Account, ident2 error) {
+			panic("Unexpected call to AccountRepo.FindByID")
 		},
 	}
 }
@@ -336,6 +364,10 @@ func NewFakeAccountRepoDefaultFatal(t_sym11 AccountRepoTestingT) *FakeAccountRep
 	return &FakeAccountRepo{
 		FindByUserHook: func(uint) (ident1 []model.Account, ident2 error) {
 			t_sym11.Fatal("Unexpected call to AccountRepo.FindByUser")
+			return
+		},
+		FindByIDHook: func(uint) (ident1 model.Account, ident2 error) {
+			t_sym11.Fatal("Unexpected call to AccountRepo.FindByID")
 			return
 		},
 	}
@@ -348,11 +380,16 @@ func NewFakeAccountRepoDefaultError(t_sym12 AccountRepoTestingT) *FakeAccountRep
 			t_sym12.Error("Unexpected call to AccountRepo.FindByUser")
 			return
 		},
+		FindByIDHook: func(uint) (ident1 model.Account, ident2 error) {
+			t_sym12.Error("Unexpected call to AccountRepo.FindByID")
+			return
+		},
 	}
 }
 
 func (f *FakeAccountRepo) Reset() {
 	f.FindByUserCalls = []*AccountRepoFindByUserInvocation{}
+	f.FindByIDCalls = []*AccountRepoFindByIDInvocation{}
 }
 
 func (f_sym13 *FakeAccountRepo) FindByUser(userID uint) (ident1 []model.Account, ident2 error) {
@@ -517,6 +554,168 @@ func (f_sym20 *FakeAccountRepo) FindByUserResultsForCall(userID uint) (ident1 []
 	return
 }
 
+func (f_sym21 *FakeAccountRepo) FindByID(id uint) (ident1 model.Account, ident2 error) {
+	if f_sym21.FindByIDHook == nil {
+		panic("AccountRepo.FindByID() called but FakeAccountRepo.FindByIDHook is nil")
+	}
+
+	invocation_sym21 := new(AccountRepoFindByIDInvocation)
+	f_sym21.FindByIDCalls = append(f_sym21.FindByIDCalls, invocation_sym21)
+
+	invocation_sym21.Parameters.Id = id
+
+	ident1, ident2 = f_sym21.FindByIDHook(id)
+
+	invocation_sym21.Results.Ident1 = ident1
+	invocation_sym21.Results.Ident2 = ident2
+
+	return
+}
+
+// SetFindByIDStub configures AccountRepo.FindByID to always return the given values
+func (f_sym22 *FakeAccountRepo) SetFindByIDStub(ident1 model.Account, ident2 error) {
+	f_sym22.FindByIDHook = func(uint) (model.Account, error) {
+		return ident1, ident2
+	}
+}
+
+// SetFindByIDInvocation configures AccountRepo.FindByID to return the given results when called with the given parameters
+// If no match is found for an invocation the result(s) of the fallback function are returned
+func (f_sym23 *FakeAccountRepo) SetFindByIDInvocation(calls_sym23 []*AccountRepoFindByIDInvocation, fallback_sym23 func() (model.Account, error)) {
+	f_sym23.FindByIDHook = func(id uint) (ident1 model.Account, ident2 error) {
+		for _, call_sym23 := range calls_sym23 {
+			if reflect.DeepEqual(call_sym23.Parameters.Id, id) {
+				ident1 = call_sym23.Results.Ident1
+				ident2 = call_sym23.Results.Ident2
+
+				return
+			}
+		}
+
+		return fallback_sym23()
+	}
+}
+
+// FindByIDCalled returns true if FakeAccountRepo.FindByID was called
+func (f *FakeAccountRepo) FindByIDCalled() bool {
+	return len(f.FindByIDCalls) != 0
+}
+
+// AssertFindByIDCalled calls t.Error if FakeAccountRepo.FindByID was not called
+func (f *FakeAccountRepo) AssertFindByIDCalled(t AccountRepoTestingT) {
+	t.Helper()
+	if len(f.FindByIDCalls) == 0 {
+		t.Error("FakeAccountRepo.FindByID not called, expected at least one")
+	}
+}
+
+// FindByIDNotCalled returns true if FakeAccountRepo.FindByID was not called
+func (f *FakeAccountRepo) FindByIDNotCalled() bool {
+	return len(f.FindByIDCalls) == 0
+}
+
+// AssertFindByIDNotCalled calls t.Error if FakeAccountRepo.FindByID was called
+func (f *FakeAccountRepo) AssertFindByIDNotCalled(t AccountRepoTestingT) {
+	t.Helper()
+	if len(f.FindByIDCalls) != 0 {
+		t.Error("FakeAccountRepo.FindByID called, expected none")
+	}
+}
+
+// FindByIDCalledOnce returns true if FakeAccountRepo.FindByID was called exactly once
+func (f *FakeAccountRepo) FindByIDCalledOnce() bool {
+	return len(f.FindByIDCalls) == 1
+}
+
+// AssertFindByIDCalledOnce calls t.Error if FakeAccountRepo.FindByID was not called exactly once
+func (f *FakeAccountRepo) AssertFindByIDCalledOnce(t AccountRepoTestingT) {
+	t.Helper()
+	if len(f.FindByIDCalls) != 1 {
+		t.Errorf("FakeAccountRepo.FindByID called %d times, expected 1", len(f.FindByIDCalls))
+	}
+}
+
+// FindByIDCalledN returns true if FakeAccountRepo.FindByID was called at least n times
+func (f *FakeAccountRepo) FindByIDCalledN(n int) bool {
+	return len(f.FindByIDCalls) >= n
+}
+
+// AssertFindByIDCalledN calls t.Error if FakeAccountRepo.FindByID was called less than n times
+func (f *FakeAccountRepo) AssertFindByIDCalledN(t AccountRepoTestingT, n int) {
+	t.Helper()
+	if len(f.FindByIDCalls) < n {
+		t.Errorf("FakeAccountRepo.FindByID called %d times, expected >= %d", len(f.FindByIDCalls), n)
+	}
+}
+
+// FindByIDCalledWith returns true if FakeAccountRepo.FindByID was called with the given values
+func (f_sym24 *FakeAccountRepo) FindByIDCalledWith(id uint) bool {
+	for _, call_sym24 := range f_sym24.FindByIDCalls {
+		if reflect.DeepEqual(call_sym24.Parameters.Id, id) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// AssertFindByIDCalledWith calls t.Error if FakeAccountRepo.FindByID was not called with the given values
+func (f_sym25 *FakeAccountRepo) AssertFindByIDCalledWith(t AccountRepoTestingT, id uint) {
+	t.Helper()
+	var found_sym25 bool
+	for _, call_sym25 := range f_sym25.FindByIDCalls {
+		if reflect.DeepEqual(call_sym25.Parameters.Id, id) {
+			found_sym25 = true
+			break
+		}
+	}
+
+	if !found_sym25 {
+		t.Error("FakeAccountRepo.FindByID not called with expected parameters")
+	}
+}
+
+// FindByIDCalledOnceWith returns true if FakeAccountRepo.FindByID was called exactly once with the given values
+func (f_sym26 *FakeAccountRepo) FindByIDCalledOnceWith(id uint) bool {
+	var count_sym26 int
+	for _, call_sym26 := range f_sym26.FindByIDCalls {
+		if reflect.DeepEqual(call_sym26.Parameters.Id, id) {
+			count_sym26++
+		}
+	}
+
+	return count_sym26 == 1
+}
+
+// AssertFindByIDCalledOnceWith calls t.Error if FakeAccountRepo.FindByID was not called exactly once with the given values
+func (f_sym27 *FakeAccountRepo) AssertFindByIDCalledOnceWith(t AccountRepoTestingT, id uint) {
+	t.Helper()
+	var count_sym27 int
+	for _, call_sym27 := range f_sym27.FindByIDCalls {
+		if reflect.DeepEqual(call_sym27.Parameters.Id, id) {
+			count_sym27++
+		}
+	}
+
+	if count_sym27 != 1 {
+		t.Errorf("FakeAccountRepo.FindByID called %d times with expected parameters, expected one", count_sym27)
+	}
+}
+
+// FindByIDResultsForCall returns the result values for the first call to FakeAccountRepo.FindByID with the given values
+func (f_sym28 *FakeAccountRepo) FindByIDResultsForCall(id uint) (ident1 model.Account, ident2 error, found_sym28 bool) {
+	for _, call_sym28 := range f_sym28.FindByIDCalls {
+		if reflect.DeepEqual(call_sym28.Parameters.Id, id) {
+			ident1 = call_sym28.Results.Ident1
+			ident2 = call_sym28.Results.Ident2
+			found_sym28 = true
+			break
+		}
+	}
+
+	return
+}
+
 // TransactionRepoFindByUserInvocation represents a single call of FakeTransactionRepo.FindByUser
 type TransactionRepoFindByUserInvocation struct {
 	Parameters struct {
@@ -565,6 +764,48 @@ func NewTransactionRepoFindByUserAccountInvocation(userID uint, accountID uint, 
 	return invocation
 }
 
+// TransactionRepoCreateInvocation represents a single call of FakeTransactionRepo.Create
+type TransactionRepoCreateInvocation struct {
+	Parameters struct {
+		Ident1 *model.Transaction
+	}
+	Results struct {
+		Ident2 error
+	}
+}
+
+// NewTransactionRepoCreateInvocation creates a new instance of TransactionRepoCreateInvocation
+func NewTransactionRepoCreateInvocation(ident1 *model.Transaction, ident2 error) *TransactionRepoCreateInvocation {
+	invocation := new(TransactionRepoCreateInvocation)
+
+	invocation.Parameters.Ident1 = ident1
+
+	invocation.Results.Ident2 = ident2
+
+	return invocation
+}
+
+// TransactionRepoUpdateInvocation represents a single call of FakeTransactionRepo.Update
+type TransactionRepoUpdateInvocation struct {
+	Parameters struct {
+		Ident1 *model.Transaction
+	}
+	Results struct {
+		Ident2 error
+	}
+}
+
+// NewTransactionRepoUpdateInvocation creates a new instance of TransactionRepoUpdateInvocation
+func NewTransactionRepoUpdateInvocation(ident1 *model.Transaction, ident2 error) *TransactionRepoUpdateInvocation {
+	invocation := new(TransactionRepoUpdateInvocation)
+
+	invocation.Parameters.Ident1 = ident1
+
+	invocation.Results.Ident2 = ident2
+
+	return invocation
+}
+
 // TransactionRepoTestingT represents the methods of "testing".T used by charlatan Fakes.  It avoids importing the testing package.
 type TransactionRepoTestingT interface {
 	Error(...interface{})
@@ -600,9 +841,13 @@ unexpected calls are made to FakeFindByUser.
 type FakeTransactionRepo struct {
 	FindByUserHook        func(uint) ([]model.Transaction, error)
 	FindByUserAccountHook func(uint, uint) ([]model.Transaction, error)
+	CreateHook            func(*model.Transaction) error
+	UpdateHook            func(*model.Transaction) error
 
 	FindByUserCalls        []*TransactionRepoFindByUserInvocation
 	FindByUserAccountCalls []*TransactionRepoFindByUserAccountInvocation
+	CreateCalls            []*TransactionRepoCreateInvocation
+	UpdateCalls            []*TransactionRepoUpdateInvocation
 }
 
 // NewFakeTransactionRepoDefaultPanic returns an instance of FakeTransactionRepo with all hooks configured to panic
@@ -614,32 +859,54 @@ func NewFakeTransactionRepoDefaultPanic() *FakeTransactionRepo {
 		FindByUserAccountHook: func(uint, uint) (ident1 []model.Transaction, ident2 error) {
 			panic("Unexpected call to TransactionRepo.FindByUserAccount")
 		},
+		CreateHook: func(*model.Transaction) (ident2 error) {
+			panic("Unexpected call to TransactionRepo.Create")
+		},
+		UpdateHook: func(*model.Transaction) (ident2 error) {
+			panic("Unexpected call to TransactionRepo.Update")
+		},
 	}
 }
 
 // NewFakeTransactionRepoDefaultFatal returns an instance of FakeTransactionRepo with all hooks configured to call t.Fatal
-func NewFakeTransactionRepoDefaultFatal(t_sym21 TransactionRepoTestingT) *FakeTransactionRepo {
+func NewFakeTransactionRepoDefaultFatal(t_sym29 TransactionRepoTestingT) *FakeTransactionRepo {
 	return &FakeTransactionRepo{
 		FindByUserHook: func(uint) (ident1 []model.Transaction, ident2 error) {
-			t_sym21.Fatal("Unexpected call to TransactionRepo.FindByUser")
+			t_sym29.Fatal("Unexpected call to TransactionRepo.FindByUser")
 			return
 		},
 		FindByUserAccountHook: func(uint, uint) (ident1 []model.Transaction, ident2 error) {
-			t_sym21.Fatal("Unexpected call to TransactionRepo.FindByUserAccount")
+			t_sym29.Fatal("Unexpected call to TransactionRepo.FindByUserAccount")
+			return
+		},
+		CreateHook: func(*model.Transaction) (ident2 error) {
+			t_sym29.Fatal("Unexpected call to TransactionRepo.Create")
+			return
+		},
+		UpdateHook: func(*model.Transaction) (ident2 error) {
+			t_sym29.Fatal("Unexpected call to TransactionRepo.Update")
 			return
 		},
 	}
 }
 
 // NewFakeTransactionRepoDefaultError returns an instance of FakeTransactionRepo with all hooks configured to call t.Error
-func NewFakeTransactionRepoDefaultError(t_sym22 TransactionRepoTestingT) *FakeTransactionRepo {
+func NewFakeTransactionRepoDefaultError(t_sym30 TransactionRepoTestingT) *FakeTransactionRepo {
 	return &FakeTransactionRepo{
 		FindByUserHook: func(uint) (ident1 []model.Transaction, ident2 error) {
-			t_sym22.Error("Unexpected call to TransactionRepo.FindByUser")
+			t_sym30.Error("Unexpected call to TransactionRepo.FindByUser")
 			return
 		},
 		FindByUserAccountHook: func(uint, uint) (ident1 []model.Transaction, ident2 error) {
-			t_sym22.Error("Unexpected call to TransactionRepo.FindByUserAccount")
+			t_sym30.Error("Unexpected call to TransactionRepo.FindByUserAccount")
+			return
+		},
+		CreateHook: func(*model.Transaction) (ident2 error) {
+			t_sym30.Error("Unexpected call to TransactionRepo.Create")
+			return
+		},
+		UpdateHook: func(*model.Transaction) (ident2 error) {
+			t_sym30.Error("Unexpected call to TransactionRepo.Update")
 			return
 		},
 	}
@@ -648,47 +915,49 @@ func NewFakeTransactionRepoDefaultError(t_sym22 TransactionRepoTestingT) *FakeTr
 func (f *FakeTransactionRepo) Reset() {
 	f.FindByUserCalls = []*TransactionRepoFindByUserInvocation{}
 	f.FindByUserAccountCalls = []*TransactionRepoFindByUserAccountInvocation{}
+	f.CreateCalls = []*TransactionRepoCreateInvocation{}
+	f.UpdateCalls = []*TransactionRepoUpdateInvocation{}
 }
 
-func (f_sym23 *FakeTransactionRepo) FindByUser(userID uint) (ident1 []model.Transaction, ident2 error) {
-	if f_sym23.FindByUserHook == nil {
+func (f_sym31 *FakeTransactionRepo) FindByUser(userID uint) (ident1 []model.Transaction, ident2 error) {
+	if f_sym31.FindByUserHook == nil {
 		panic("TransactionRepo.FindByUser() called but FakeTransactionRepo.FindByUserHook is nil")
 	}
 
-	invocation_sym23 := new(TransactionRepoFindByUserInvocation)
-	f_sym23.FindByUserCalls = append(f_sym23.FindByUserCalls, invocation_sym23)
+	invocation_sym31 := new(TransactionRepoFindByUserInvocation)
+	f_sym31.FindByUserCalls = append(f_sym31.FindByUserCalls, invocation_sym31)
 
-	invocation_sym23.Parameters.UserID = userID
+	invocation_sym31.Parameters.UserID = userID
 
-	ident1, ident2 = f_sym23.FindByUserHook(userID)
+	ident1, ident2 = f_sym31.FindByUserHook(userID)
 
-	invocation_sym23.Results.Ident1 = ident1
-	invocation_sym23.Results.Ident2 = ident2
+	invocation_sym31.Results.Ident1 = ident1
+	invocation_sym31.Results.Ident2 = ident2
 
 	return
 }
 
 // SetFindByUserStub configures TransactionRepo.FindByUser to always return the given values
-func (f_sym24 *FakeTransactionRepo) SetFindByUserStub(ident1 []model.Transaction, ident2 error) {
-	f_sym24.FindByUserHook = func(uint) ([]model.Transaction, error) {
+func (f_sym32 *FakeTransactionRepo) SetFindByUserStub(ident1 []model.Transaction, ident2 error) {
+	f_sym32.FindByUserHook = func(uint) ([]model.Transaction, error) {
 		return ident1, ident2
 	}
 }
 
 // SetFindByUserInvocation configures TransactionRepo.FindByUser to return the given results when called with the given parameters
 // If no match is found for an invocation the result(s) of the fallback function are returned
-func (f_sym25 *FakeTransactionRepo) SetFindByUserInvocation(calls_sym25 []*TransactionRepoFindByUserInvocation, fallback_sym25 func() ([]model.Transaction, error)) {
-	f_sym25.FindByUserHook = func(userID uint) (ident1 []model.Transaction, ident2 error) {
-		for _, call_sym25 := range calls_sym25 {
-			if reflect.DeepEqual(call_sym25.Parameters.UserID, userID) {
-				ident1 = call_sym25.Results.Ident1
-				ident2 = call_sym25.Results.Ident2
+func (f_sym33 *FakeTransactionRepo) SetFindByUserInvocation(calls_sym33 []*TransactionRepoFindByUserInvocation, fallback_sym33 func() ([]model.Transaction, error)) {
+	f_sym33.FindByUserHook = func(userID uint) (ident1 []model.Transaction, ident2 error) {
+		for _, call_sym33 := range calls_sym33 {
+			if reflect.DeepEqual(call_sym33.Parameters.UserID, userID) {
+				ident1 = call_sym33.Results.Ident1
+				ident2 = call_sym33.Results.Ident2
 
 				return
 			}
 		}
 
-		return fallback_sym25()
+		return fallback_sym33()
 	}
 }
 
@@ -745,9 +1014,9 @@ func (f *FakeTransactionRepo) AssertFindByUserCalledN(t TransactionRepoTestingT,
 }
 
 // FindByUserCalledWith returns true if FakeTransactionRepo.FindByUser was called with the given values
-func (f_sym26 *FakeTransactionRepo) FindByUserCalledWith(userID uint) bool {
-	for _, call_sym26 := range f_sym26.FindByUserCalls {
-		if reflect.DeepEqual(call_sym26.Parameters.UserID, userID) {
+func (f_sym34 *FakeTransactionRepo) FindByUserCalledWith(userID uint) bool {
+	for _, call_sym34 := range f_sym34.FindByUserCalls {
+		if reflect.DeepEqual(call_sym34.Parameters.UserID, userID) {
 			return true
 		}
 	}
@@ -756,55 +1025,55 @@ func (f_sym26 *FakeTransactionRepo) FindByUserCalledWith(userID uint) bool {
 }
 
 // AssertFindByUserCalledWith calls t.Error if FakeTransactionRepo.FindByUser was not called with the given values
-func (f_sym27 *FakeTransactionRepo) AssertFindByUserCalledWith(t TransactionRepoTestingT, userID uint) {
+func (f_sym35 *FakeTransactionRepo) AssertFindByUserCalledWith(t TransactionRepoTestingT, userID uint) {
 	t.Helper()
-	var found_sym27 bool
-	for _, call_sym27 := range f_sym27.FindByUserCalls {
-		if reflect.DeepEqual(call_sym27.Parameters.UserID, userID) {
-			found_sym27 = true
+	var found_sym35 bool
+	for _, call_sym35 := range f_sym35.FindByUserCalls {
+		if reflect.DeepEqual(call_sym35.Parameters.UserID, userID) {
+			found_sym35 = true
 			break
 		}
 	}
 
-	if !found_sym27 {
+	if !found_sym35 {
 		t.Error("FakeTransactionRepo.FindByUser not called with expected parameters")
 	}
 }
 
 // FindByUserCalledOnceWith returns true if FakeTransactionRepo.FindByUser was called exactly once with the given values
-func (f_sym28 *FakeTransactionRepo) FindByUserCalledOnceWith(userID uint) bool {
-	var count_sym28 int
-	for _, call_sym28 := range f_sym28.FindByUserCalls {
-		if reflect.DeepEqual(call_sym28.Parameters.UserID, userID) {
-			count_sym28++
+func (f_sym36 *FakeTransactionRepo) FindByUserCalledOnceWith(userID uint) bool {
+	var count_sym36 int
+	for _, call_sym36 := range f_sym36.FindByUserCalls {
+		if reflect.DeepEqual(call_sym36.Parameters.UserID, userID) {
+			count_sym36++
 		}
 	}
 
-	return count_sym28 == 1
+	return count_sym36 == 1
 }
 
 // AssertFindByUserCalledOnceWith calls t.Error if FakeTransactionRepo.FindByUser was not called exactly once with the given values
-func (f_sym29 *FakeTransactionRepo) AssertFindByUserCalledOnceWith(t TransactionRepoTestingT, userID uint) {
+func (f_sym37 *FakeTransactionRepo) AssertFindByUserCalledOnceWith(t TransactionRepoTestingT, userID uint) {
 	t.Helper()
-	var count_sym29 int
-	for _, call_sym29 := range f_sym29.FindByUserCalls {
-		if reflect.DeepEqual(call_sym29.Parameters.UserID, userID) {
-			count_sym29++
+	var count_sym37 int
+	for _, call_sym37 := range f_sym37.FindByUserCalls {
+		if reflect.DeepEqual(call_sym37.Parameters.UserID, userID) {
+			count_sym37++
 		}
 	}
 
-	if count_sym29 != 1 {
-		t.Errorf("FakeTransactionRepo.FindByUser called %d times with expected parameters, expected one", count_sym29)
+	if count_sym37 != 1 {
+		t.Errorf("FakeTransactionRepo.FindByUser called %d times with expected parameters, expected one", count_sym37)
 	}
 }
 
 // FindByUserResultsForCall returns the result values for the first call to FakeTransactionRepo.FindByUser with the given values
-func (f_sym30 *FakeTransactionRepo) FindByUserResultsForCall(userID uint) (ident1 []model.Transaction, ident2 error, found_sym30 bool) {
-	for _, call_sym30 := range f_sym30.FindByUserCalls {
-		if reflect.DeepEqual(call_sym30.Parameters.UserID, userID) {
-			ident1 = call_sym30.Results.Ident1
-			ident2 = call_sym30.Results.Ident2
-			found_sym30 = true
+func (f_sym38 *FakeTransactionRepo) FindByUserResultsForCall(userID uint) (ident1 []model.Transaction, ident2 error, found_sym38 bool) {
+	for _, call_sym38 := range f_sym38.FindByUserCalls {
+		if reflect.DeepEqual(call_sym38.Parameters.UserID, userID) {
+			ident1 = call_sym38.Results.Ident1
+			ident2 = call_sym38.Results.Ident2
+			found_sym38 = true
 			break
 		}
 	}
@@ -812,46 +1081,46 @@ func (f_sym30 *FakeTransactionRepo) FindByUserResultsForCall(userID uint) (ident
 	return
 }
 
-func (f_sym31 *FakeTransactionRepo) FindByUserAccount(userID uint, accountID uint) (ident1 []model.Transaction, ident2 error) {
-	if f_sym31.FindByUserAccountHook == nil {
+func (f_sym39 *FakeTransactionRepo) FindByUserAccount(userID uint, accountID uint) (ident1 []model.Transaction, ident2 error) {
+	if f_sym39.FindByUserAccountHook == nil {
 		panic("TransactionRepo.FindByUserAccount() called but FakeTransactionRepo.FindByUserAccountHook is nil")
 	}
 
-	invocation_sym31 := new(TransactionRepoFindByUserAccountInvocation)
-	f_sym31.FindByUserAccountCalls = append(f_sym31.FindByUserAccountCalls, invocation_sym31)
+	invocation_sym39 := new(TransactionRepoFindByUserAccountInvocation)
+	f_sym39.FindByUserAccountCalls = append(f_sym39.FindByUserAccountCalls, invocation_sym39)
 
-	invocation_sym31.Parameters.UserID = userID
-	invocation_sym31.Parameters.AccountID = accountID
+	invocation_sym39.Parameters.UserID = userID
+	invocation_sym39.Parameters.AccountID = accountID
 
-	ident1, ident2 = f_sym31.FindByUserAccountHook(userID, accountID)
+	ident1, ident2 = f_sym39.FindByUserAccountHook(userID, accountID)
 
-	invocation_sym31.Results.Ident1 = ident1
-	invocation_sym31.Results.Ident2 = ident2
+	invocation_sym39.Results.Ident1 = ident1
+	invocation_sym39.Results.Ident2 = ident2
 
 	return
 }
 
 // SetFindByUserAccountStub configures TransactionRepo.FindByUserAccount to always return the given values
-func (f_sym32 *FakeTransactionRepo) SetFindByUserAccountStub(ident1 []model.Transaction, ident2 error) {
-	f_sym32.FindByUserAccountHook = func(uint, uint) ([]model.Transaction, error) {
+func (f_sym40 *FakeTransactionRepo) SetFindByUserAccountStub(ident1 []model.Transaction, ident2 error) {
+	f_sym40.FindByUserAccountHook = func(uint, uint) ([]model.Transaction, error) {
 		return ident1, ident2
 	}
 }
 
 // SetFindByUserAccountInvocation configures TransactionRepo.FindByUserAccount to return the given results when called with the given parameters
 // If no match is found for an invocation the result(s) of the fallback function are returned
-func (f_sym33 *FakeTransactionRepo) SetFindByUserAccountInvocation(calls_sym33 []*TransactionRepoFindByUserAccountInvocation, fallback_sym33 func() ([]model.Transaction, error)) {
-	f_sym33.FindByUserAccountHook = func(userID uint, accountID uint) (ident1 []model.Transaction, ident2 error) {
-		for _, call_sym33 := range calls_sym33 {
-			if reflect.DeepEqual(call_sym33.Parameters.UserID, userID) && reflect.DeepEqual(call_sym33.Parameters.AccountID, accountID) {
-				ident1 = call_sym33.Results.Ident1
-				ident2 = call_sym33.Results.Ident2
+func (f_sym41 *FakeTransactionRepo) SetFindByUserAccountInvocation(calls_sym41 []*TransactionRepoFindByUserAccountInvocation, fallback_sym41 func() ([]model.Transaction, error)) {
+	f_sym41.FindByUserAccountHook = func(userID uint, accountID uint) (ident1 []model.Transaction, ident2 error) {
+		for _, call_sym41 := range calls_sym41 {
+			if reflect.DeepEqual(call_sym41.Parameters.UserID, userID) && reflect.DeepEqual(call_sym41.Parameters.AccountID, accountID) {
+				ident1 = call_sym41.Results.Ident1
+				ident2 = call_sym41.Results.Ident2
 
 				return
 			}
 		}
 
-		return fallback_sym33()
+		return fallback_sym41()
 	}
 }
 
@@ -908,9 +1177,9 @@ func (f *FakeTransactionRepo) AssertFindByUserAccountCalledN(t TransactionRepoTe
 }
 
 // FindByUserAccountCalledWith returns true if FakeTransactionRepo.FindByUserAccount was called with the given values
-func (f_sym34 *FakeTransactionRepo) FindByUserAccountCalledWith(userID uint, accountID uint) bool {
-	for _, call_sym34 := range f_sym34.FindByUserAccountCalls {
-		if reflect.DeepEqual(call_sym34.Parameters.UserID, userID) && reflect.DeepEqual(call_sym34.Parameters.AccountID, accountID) {
+func (f_sym42 *FakeTransactionRepo) FindByUserAccountCalledWith(userID uint, accountID uint) bool {
+	for _, call_sym42 := range f_sym42.FindByUserAccountCalls {
+		if reflect.DeepEqual(call_sym42.Parameters.UserID, userID) && reflect.DeepEqual(call_sym42.Parameters.AccountID, accountID) {
 			return true
 		}
 	}
@@ -919,55 +1188,373 @@ func (f_sym34 *FakeTransactionRepo) FindByUserAccountCalledWith(userID uint, acc
 }
 
 // AssertFindByUserAccountCalledWith calls t.Error if FakeTransactionRepo.FindByUserAccount was not called with the given values
-func (f_sym35 *FakeTransactionRepo) AssertFindByUserAccountCalledWith(t TransactionRepoTestingT, userID uint, accountID uint) {
+func (f_sym43 *FakeTransactionRepo) AssertFindByUserAccountCalledWith(t TransactionRepoTestingT, userID uint, accountID uint) {
 	t.Helper()
-	var found_sym35 bool
-	for _, call_sym35 := range f_sym35.FindByUserAccountCalls {
-		if reflect.DeepEqual(call_sym35.Parameters.UserID, userID) && reflect.DeepEqual(call_sym35.Parameters.AccountID, accountID) {
-			found_sym35 = true
+	var found_sym43 bool
+	for _, call_sym43 := range f_sym43.FindByUserAccountCalls {
+		if reflect.DeepEqual(call_sym43.Parameters.UserID, userID) && reflect.DeepEqual(call_sym43.Parameters.AccountID, accountID) {
+			found_sym43 = true
 			break
 		}
 	}
 
-	if !found_sym35 {
+	if !found_sym43 {
 		t.Error("FakeTransactionRepo.FindByUserAccount not called with expected parameters")
 	}
 }
 
 // FindByUserAccountCalledOnceWith returns true if FakeTransactionRepo.FindByUserAccount was called exactly once with the given values
-func (f_sym36 *FakeTransactionRepo) FindByUserAccountCalledOnceWith(userID uint, accountID uint) bool {
-	var count_sym36 int
-	for _, call_sym36 := range f_sym36.FindByUserAccountCalls {
-		if reflect.DeepEqual(call_sym36.Parameters.UserID, userID) && reflect.DeepEqual(call_sym36.Parameters.AccountID, accountID) {
-			count_sym36++
+func (f_sym44 *FakeTransactionRepo) FindByUserAccountCalledOnceWith(userID uint, accountID uint) bool {
+	var count_sym44 int
+	for _, call_sym44 := range f_sym44.FindByUserAccountCalls {
+		if reflect.DeepEqual(call_sym44.Parameters.UserID, userID) && reflect.DeepEqual(call_sym44.Parameters.AccountID, accountID) {
+			count_sym44++
 		}
 	}
 
-	return count_sym36 == 1
+	return count_sym44 == 1
 }
 
 // AssertFindByUserAccountCalledOnceWith calls t.Error if FakeTransactionRepo.FindByUserAccount was not called exactly once with the given values
-func (f_sym37 *FakeTransactionRepo) AssertFindByUserAccountCalledOnceWith(t TransactionRepoTestingT, userID uint, accountID uint) {
+func (f_sym45 *FakeTransactionRepo) AssertFindByUserAccountCalledOnceWith(t TransactionRepoTestingT, userID uint, accountID uint) {
 	t.Helper()
-	var count_sym37 int
-	for _, call_sym37 := range f_sym37.FindByUserAccountCalls {
-		if reflect.DeepEqual(call_sym37.Parameters.UserID, userID) && reflect.DeepEqual(call_sym37.Parameters.AccountID, accountID) {
-			count_sym37++
+	var count_sym45 int
+	for _, call_sym45 := range f_sym45.FindByUserAccountCalls {
+		if reflect.DeepEqual(call_sym45.Parameters.UserID, userID) && reflect.DeepEqual(call_sym45.Parameters.AccountID, accountID) {
+			count_sym45++
 		}
 	}
 
-	if count_sym37 != 1 {
-		t.Errorf("FakeTransactionRepo.FindByUserAccount called %d times with expected parameters, expected one", count_sym37)
+	if count_sym45 != 1 {
+		t.Errorf("FakeTransactionRepo.FindByUserAccount called %d times with expected parameters, expected one", count_sym45)
 	}
 }
 
 // FindByUserAccountResultsForCall returns the result values for the first call to FakeTransactionRepo.FindByUserAccount with the given values
-func (f_sym38 *FakeTransactionRepo) FindByUserAccountResultsForCall(userID uint, accountID uint) (ident1 []model.Transaction, ident2 error, found_sym38 bool) {
-	for _, call_sym38 := range f_sym38.FindByUserAccountCalls {
-		if reflect.DeepEqual(call_sym38.Parameters.UserID, userID) && reflect.DeepEqual(call_sym38.Parameters.AccountID, accountID) {
-			ident1 = call_sym38.Results.Ident1
-			ident2 = call_sym38.Results.Ident2
-			found_sym38 = true
+func (f_sym46 *FakeTransactionRepo) FindByUserAccountResultsForCall(userID uint, accountID uint) (ident1 []model.Transaction, ident2 error, found_sym46 bool) {
+	for _, call_sym46 := range f_sym46.FindByUserAccountCalls {
+		if reflect.DeepEqual(call_sym46.Parameters.UserID, userID) && reflect.DeepEqual(call_sym46.Parameters.AccountID, accountID) {
+			ident1 = call_sym46.Results.Ident1
+			ident2 = call_sym46.Results.Ident2
+			found_sym46 = true
+			break
+		}
+	}
+
+	return
+}
+
+func (f_sym47 *FakeTransactionRepo) Create(ident1 *model.Transaction) (ident2 error) {
+	if f_sym47.CreateHook == nil {
+		panic("TransactionRepo.Create() called but FakeTransactionRepo.CreateHook is nil")
+	}
+
+	invocation_sym47 := new(TransactionRepoCreateInvocation)
+	f_sym47.CreateCalls = append(f_sym47.CreateCalls, invocation_sym47)
+
+	invocation_sym47.Parameters.Ident1 = ident1
+
+	ident2 = f_sym47.CreateHook(ident1)
+
+	invocation_sym47.Results.Ident2 = ident2
+
+	return
+}
+
+// SetCreateStub configures TransactionRepo.Create to always return the given values
+func (f_sym48 *FakeTransactionRepo) SetCreateStub(ident2 error) {
+	f_sym48.CreateHook = func(*model.Transaction) error {
+		return ident2
+	}
+}
+
+// SetCreateInvocation configures TransactionRepo.Create to return the given results when called with the given parameters
+// If no match is found for an invocation the result(s) of the fallback function are returned
+func (f_sym49 *FakeTransactionRepo) SetCreateInvocation(calls_sym49 []*TransactionRepoCreateInvocation, fallback_sym49 func() error) {
+	f_sym49.CreateHook = func(ident1 *model.Transaction) (ident2 error) {
+		for _, call_sym49 := range calls_sym49 {
+			if reflect.DeepEqual(call_sym49.Parameters.Ident1, ident1) {
+				ident2 = call_sym49.Results.Ident2
+
+				return
+			}
+		}
+
+		return fallback_sym49()
+	}
+}
+
+// CreateCalled returns true if FakeTransactionRepo.Create was called
+func (f *FakeTransactionRepo) CreateCalled() bool {
+	return len(f.CreateCalls) != 0
+}
+
+// AssertCreateCalled calls t.Error if FakeTransactionRepo.Create was not called
+func (f *FakeTransactionRepo) AssertCreateCalled(t TransactionRepoTestingT) {
+	t.Helper()
+	if len(f.CreateCalls) == 0 {
+		t.Error("FakeTransactionRepo.Create not called, expected at least one")
+	}
+}
+
+// CreateNotCalled returns true if FakeTransactionRepo.Create was not called
+func (f *FakeTransactionRepo) CreateNotCalled() bool {
+	return len(f.CreateCalls) == 0
+}
+
+// AssertCreateNotCalled calls t.Error if FakeTransactionRepo.Create was called
+func (f *FakeTransactionRepo) AssertCreateNotCalled(t TransactionRepoTestingT) {
+	t.Helper()
+	if len(f.CreateCalls) != 0 {
+		t.Error("FakeTransactionRepo.Create called, expected none")
+	}
+}
+
+// CreateCalledOnce returns true if FakeTransactionRepo.Create was called exactly once
+func (f *FakeTransactionRepo) CreateCalledOnce() bool {
+	return len(f.CreateCalls) == 1
+}
+
+// AssertCreateCalledOnce calls t.Error if FakeTransactionRepo.Create was not called exactly once
+func (f *FakeTransactionRepo) AssertCreateCalledOnce(t TransactionRepoTestingT) {
+	t.Helper()
+	if len(f.CreateCalls) != 1 {
+		t.Errorf("FakeTransactionRepo.Create called %d times, expected 1", len(f.CreateCalls))
+	}
+}
+
+// CreateCalledN returns true if FakeTransactionRepo.Create was called at least n times
+func (f *FakeTransactionRepo) CreateCalledN(n int) bool {
+	return len(f.CreateCalls) >= n
+}
+
+// AssertCreateCalledN calls t.Error if FakeTransactionRepo.Create was called less than n times
+func (f *FakeTransactionRepo) AssertCreateCalledN(t TransactionRepoTestingT, n int) {
+	t.Helper()
+	if len(f.CreateCalls) < n {
+		t.Errorf("FakeTransactionRepo.Create called %d times, expected >= %d", len(f.CreateCalls), n)
+	}
+}
+
+// CreateCalledWith returns true if FakeTransactionRepo.Create was called with the given values
+func (f_sym50 *FakeTransactionRepo) CreateCalledWith(ident1 *model.Transaction) bool {
+	for _, call_sym50 := range f_sym50.CreateCalls {
+		if reflect.DeepEqual(call_sym50.Parameters.Ident1, ident1) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// AssertCreateCalledWith calls t.Error if FakeTransactionRepo.Create was not called with the given values
+func (f_sym51 *FakeTransactionRepo) AssertCreateCalledWith(t TransactionRepoTestingT, ident1 *model.Transaction) {
+	t.Helper()
+	var found_sym51 bool
+	for _, call_sym51 := range f_sym51.CreateCalls {
+		if reflect.DeepEqual(call_sym51.Parameters.Ident1, ident1) {
+			found_sym51 = true
+			break
+		}
+	}
+
+	if !found_sym51 {
+		t.Error("FakeTransactionRepo.Create not called with expected parameters")
+	}
+}
+
+// CreateCalledOnceWith returns true if FakeTransactionRepo.Create was called exactly once with the given values
+func (f_sym52 *FakeTransactionRepo) CreateCalledOnceWith(ident1 *model.Transaction) bool {
+	var count_sym52 int
+	for _, call_sym52 := range f_sym52.CreateCalls {
+		if reflect.DeepEqual(call_sym52.Parameters.Ident1, ident1) {
+			count_sym52++
+		}
+	}
+
+	return count_sym52 == 1
+}
+
+// AssertCreateCalledOnceWith calls t.Error if FakeTransactionRepo.Create was not called exactly once with the given values
+func (f_sym53 *FakeTransactionRepo) AssertCreateCalledOnceWith(t TransactionRepoTestingT, ident1 *model.Transaction) {
+	t.Helper()
+	var count_sym53 int
+	for _, call_sym53 := range f_sym53.CreateCalls {
+		if reflect.DeepEqual(call_sym53.Parameters.Ident1, ident1) {
+			count_sym53++
+		}
+	}
+
+	if count_sym53 != 1 {
+		t.Errorf("FakeTransactionRepo.Create called %d times with expected parameters, expected one", count_sym53)
+	}
+}
+
+// CreateResultsForCall returns the result values for the first call to FakeTransactionRepo.Create with the given values
+func (f_sym54 *FakeTransactionRepo) CreateResultsForCall(ident1 *model.Transaction) (ident2 error, found_sym54 bool) {
+	for _, call_sym54 := range f_sym54.CreateCalls {
+		if reflect.DeepEqual(call_sym54.Parameters.Ident1, ident1) {
+			ident2 = call_sym54.Results.Ident2
+			found_sym54 = true
+			break
+		}
+	}
+
+	return
+}
+
+func (f_sym55 *FakeTransactionRepo) Update(ident1 *model.Transaction) (ident2 error) {
+	if f_sym55.UpdateHook == nil {
+		panic("TransactionRepo.Update() called but FakeTransactionRepo.UpdateHook is nil")
+	}
+
+	invocation_sym55 := new(TransactionRepoUpdateInvocation)
+	f_sym55.UpdateCalls = append(f_sym55.UpdateCalls, invocation_sym55)
+
+	invocation_sym55.Parameters.Ident1 = ident1
+
+	ident2 = f_sym55.UpdateHook(ident1)
+
+	invocation_sym55.Results.Ident2 = ident2
+
+	return
+}
+
+// SetUpdateStub configures TransactionRepo.Update to always return the given values
+func (f_sym56 *FakeTransactionRepo) SetUpdateStub(ident2 error) {
+	f_sym56.UpdateHook = func(*model.Transaction) error {
+		return ident2
+	}
+}
+
+// SetUpdateInvocation configures TransactionRepo.Update to return the given results when called with the given parameters
+// If no match is found for an invocation the result(s) of the fallback function are returned
+func (f_sym57 *FakeTransactionRepo) SetUpdateInvocation(calls_sym57 []*TransactionRepoUpdateInvocation, fallback_sym57 func() error) {
+	f_sym57.UpdateHook = func(ident1 *model.Transaction) (ident2 error) {
+		for _, call_sym57 := range calls_sym57 {
+			if reflect.DeepEqual(call_sym57.Parameters.Ident1, ident1) {
+				ident2 = call_sym57.Results.Ident2
+
+				return
+			}
+		}
+
+		return fallback_sym57()
+	}
+}
+
+// UpdateCalled returns true if FakeTransactionRepo.Update was called
+func (f *FakeTransactionRepo) UpdateCalled() bool {
+	return len(f.UpdateCalls) != 0
+}
+
+// AssertUpdateCalled calls t.Error if FakeTransactionRepo.Update was not called
+func (f *FakeTransactionRepo) AssertUpdateCalled(t TransactionRepoTestingT) {
+	t.Helper()
+	if len(f.UpdateCalls) == 0 {
+		t.Error("FakeTransactionRepo.Update not called, expected at least one")
+	}
+}
+
+// UpdateNotCalled returns true if FakeTransactionRepo.Update was not called
+func (f *FakeTransactionRepo) UpdateNotCalled() bool {
+	return len(f.UpdateCalls) == 0
+}
+
+// AssertUpdateNotCalled calls t.Error if FakeTransactionRepo.Update was called
+func (f *FakeTransactionRepo) AssertUpdateNotCalled(t TransactionRepoTestingT) {
+	t.Helper()
+	if len(f.UpdateCalls) != 0 {
+		t.Error("FakeTransactionRepo.Update called, expected none")
+	}
+}
+
+// UpdateCalledOnce returns true if FakeTransactionRepo.Update was called exactly once
+func (f *FakeTransactionRepo) UpdateCalledOnce() bool {
+	return len(f.UpdateCalls) == 1
+}
+
+// AssertUpdateCalledOnce calls t.Error if FakeTransactionRepo.Update was not called exactly once
+func (f *FakeTransactionRepo) AssertUpdateCalledOnce(t TransactionRepoTestingT) {
+	t.Helper()
+	if len(f.UpdateCalls) != 1 {
+		t.Errorf("FakeTransactionRepo.Update called %d times, expected 1", len(f.UpdateCalls))
+	}
+}
+
+// UpdateCalledN returns true if FakeTransactionRepo.Update was called at least n times
+func (f *FakeTransactionRepo) UpdateCalledN(n int) bool {
+	return len(f.UpdateCalls) >= n
+}
+
+// AssertUpdateCalledN calls t.Error if FakeTransactionRepo.Update was called less than n times
+func (f *FakeTransactionRepo) AssertUpdateCalledN(t TransactionRepoTestingT, n int) {
+	t.Helper()
+	if len(f.UpdateCalls) < n {
+		t.Errorf("FakeTransactionRepo.Update called %d times, expected >= %d", len(f.UpdateCalls), n)
+	}
+}
+
+// UpdateCalledWith returns true if FakeTransactionRepo.Update was called with the given values
+func (f_sym58 *FakeTransactionRepo) UpdateCalledWith(ident1 *model.Transaction) bool {
+	for _, call_sym58 := range f_sym58.UpdateCalls {
+		if reflect.DeepEqual(call_sym58.Parameters.Ident1, ident1) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// AssertUpdateCalledWith calls t.Error if FakeTransactionRepo.Update was not called with the given values
+func (f_sym59 *FakeTransactionRepo) AssertUpdateCalledWith(t TransactionRepoTestingT, ident1 *model.Transaction) {
+	t.Helper()
+	var found_sym59 bool
+	for _, call_sym59 := range f_sym59.UpdateCalls {
+		if reflect.DeepEqual(call_sym59.Parameters.Ident1, ident1) {
+			found_sym59 = true
+			break
+		}
+	}
+
+	if !found_sym59 {
+		t.Error("FakeTransactionRepo.Update not called with expected parameters")
+	}
+}
+
+// UpdateCalledOnceWith returns true if FakeTransactionRepo.Update was called exactly once with the given values
+func (f_sym60 *FakeTransactionRepo) UpdateCalledOnceWith(ident1 *model.Transaction) bool {
+	var count_sym60 int
+	for _, call_sym60 := range f_sym60.UpdateCalls {
+		if reflect.DeepEqual(call_sym60.Parameters.Ident1, ident1) {
+			count_sym60++
+		}
+	}
+
+	return count_sym60 == 1
+}
+
+// AssertUpdateCalledOnceWith calls t.Error if FakeTransactionRepo.Update was not called exactly once with the given values
+func (f_sym61 *FakeTransactionRepo) AssertUpdateCalledOnceWith(t TransactionRepoTestingT, ident1 *model.Transaction) {
+	t.Helper()
+	var count_sym61 int
+	for _, call_sym61 := range f_sym61.UpdateCalls {
+		if reflect.DeepEqual(call_sym61.Parameters.Ident1, ident1) {
+			count_sym61++
+		}
+	}
+
+	if count_sym61 != 1 {
+		t.Errorf("FakeTransactionRepo.Update called %d times with expected parameters, expected one", count_sym61)
+	}
+}
+
+// UpdateResultsForCall returns the result values for the first call to FakeTransactionRepo.Update with the given values
+func (f_sym62 *FakeTransactionRepo) UpdateResultsForCall(ident1 *model.Transaction) (ident2 error, found_sym62 bool) {
+	for _, call_sym62 := range f_sym62.UpdateCalls {
+		if reflect.DeepEqual(call_sym62.Parameters.Ident1, ident1) {
+			ident2 = call_sym62.Results.Ident2
+			found_sym62 = true
 			break
 		}
 	}
