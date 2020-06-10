@@ -13,6 +13,10 @@ type CreateTransaction struct {
 	TransactionType model.TransactionType
 }
 
+type UpdateTransaction struct {
+	Amount decimal.Decimal
+}
+
 type Transaction struct {
 	ID              uint
 	AccountID       uint

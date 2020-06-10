@@ -340,7 +340,7 @@ func TestUserUsecase_CreateTransaction(t *testing.T) {
 		}
 
 		uc := NewUserUsecase(userRepo, accountRepo, tranRepo)
-		createdTran, err := uc.CreateTransaction(1, &CreateTransaction{
+		createdTran, err := uc.CreateTransaction(1, CreateTransaction{
 			AccountID:       1,
 			Amount:          decimal.NewFromInt(1000),
 			TransactionType: model.TransactionTypeDeposit,
@@ -364,7 +364,7 @@ func TestUserUsecase_CreateTransaction(t *testing.T) {
 		t.Parallel()
 
 		t.Run("invalid transaction type", func(t *testing.T) {
-			tran := &CreateTransaction{
+			tran := CreateTransaction{
 				AccountID:       1,
 				Amount:          decimal.NewFromInt(1000),
 				TransactionType: "TTT",
@@ -376,7 +376,7 @@ func TestUserUsecase_CreateTransaction(t *testing.T) {
 		})
 
 		t.Run("invalid ammount", func(t *testing.T) {
-			tran := &CreateTransaction{
+			tran := CreateTransaction{
 				AccountID:       1,
 				Amount:          decimal.NewFromInt(0),
 				TransactionType: model.TransactionTypeDeposit,
@@ -384,11 +384,11 @@ func TestUserUsecase_CreateTransaction(t *testing.T) {
 
 			uc := NewUserUsecase(nil, nil, nil)
 			_, err := uc.CreateTransaction(1, tran)
-			assert.EqualError(t, err, "0: invalid amount")
+			assert.EqualError(t, err, "amount[0]: invalid")
 		})
 
 		t.Run("find user by id fail", func(t *testing.T) {
-			tran := &CreateTransaction{
+			tran := CreateTransaction{
 				AccountID:       1,
 				Amount:          decimal.NewFromInt(1000),
 				TransactionType: model.TransactionTypeDeposit,
@@ -407,7 +407,7 @@ func TestUserUsecase_CreateTransaction(t *testing.T) {
 		})
 
 		t.Run("find account by id fail", func(t *testing.T) {
-			tran := &CreateTransaction{
+			tran := CreateTransaction{
 				AccountID:       1,
 				Amount:          decimal.NewFromInt(1000),
 				TransactionType: model.TransactionTypeDeposit,
@@ -436,7 +436,7 @@ func TestUserUsecase_CreateTransaction(t *testing.T) {
 		})
 
 		t.Run("account not belong to user", func(t *testing.T) {
-			tran := &CreateTransaction{
+			tran := CreateTransaction{
 				AccountID:       1,
 				Amount:          decimal.NewFromInt(1000),
 				TransactionType: model.TransactionTypeDeposit,
@@ -471,8 +471,8 @@ func TestUserUsecase_CreateTransaction(t *testing.T) {
 			assert.EqualError(t, err, "account[1] invalid")
 		})
 
-		t.Run("something wrong when persisting tracsaction", func(t *testing.T) {
-			tran := &CreateTransaction{
+		t.Run("something wrong when persisting transaction", func(t *testing.T) {
+			tran := CreateTransaction{
 				AccountID:       1,
 				Amount:          decimal.NewFromInt(1000),
 				TransactionType: model.TransactionTypeDeposit,
@@ -510,6 +510,280 @@ func TestUserUsecase_CreateTransaction(t *testing.T) {
 			uc := NewUserUsecase(userRepo, accountRepo, tranRepo)
 			_, err := uc.CreateTransaction(1, tran)
 			assert.EqualError(t, err, "persit transaction: internal error")
+		})
+	})
+}
+
+func TestUserUsecase_UpdateTransaction(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success", func(t *testing.T) {
+		userRepo := &mock.FakeUserRepo{
+			FindByIDHook: func(userID uint) (model.User, error) {
+				if userID == 1 {
+					return model.User{
+						1, "Alice",
+					}, nil
+				}
+
+				return model.User{}, model.ErrNotFound
+			},
+		}
+
+		tranRepo := &mock.FakeTransactionRepo{
+			FindByIDHook: func(tranID uint) (model.Transaction, error) {
+				if tranID == 2 {
+					return model.Transaction{
+						ID:              2,
+						AccountID:       3,
+						Amount:          decimal.NewFromInt(1000),
+						TransactionType: model.TransactionTypeDeposit,
+						CreatedAt:       "2020-02-10 20:10:00 +0700",
+					}, nil
+				}
+
+				return model.Transaction{}, model.ErrNotFound
+			},
+			UpdateHook: func(t *model.Transaction) error {
+				return nil
+			},
+		}
+
+		accountRepo := &mock.FakeAccountRepo{
+			FindByUserHook: func(userID uint) ([]model.Account, error) {
+				if userID == 1 {
+					return []model.Account{
+						{
+							ID:     3,
+							UserID: 1,
+							Name:   "PHAN THANH CONG",
+							Bank:   "ACB",
+						},
+					}, nil
+				}
+
+				return nil, nil
+			},
+		}
+
+		uc := NewUserUsecase(userRepo, accountRepo, tranRepo)
+
+		tran, err := uc.UpdateTransaction(1, 2, UpdateTransaction{decimal.NewFromInt(2000)})
+		assert.NoError(t, err)
+
+		bytes, err := json.Marshal(tran)
+		assert.NoError(t, err)
+		assert.JSONEq(t, `{
+  "ID": 2,
+  "AccountID": 3,
+  "Amount": "2000",
+  "Bank": "ACB",
+  "TransactionType": "deposit",
+  "CreatedAt": "2020-02-10 20:10:00 +0700"
+}`, string(bytes))
+	})
+
+	t.Run("fail", func(t *testing.T) {
+		t.Run("zero amount", func(t *testing.T) {
+			uc := NewUserUsecase(nil, nil, nil)
+			_, err := uc.UpdateTransaction(1, 2, UpdateTransaction{decimal.NewFromInt(0)})
+			assert.True(t, errors.Is(err, model.ErrInvalid))
+			assert.EqualError(t, err, "amount[0]: invalid")
+		})
+
+		t.Run("find user fail", func(t *testing.T) {
+			userRepo := &mock.FakeUserRepo{
+				FindByIDHook: func(userID uint) (model.User, error) {
+					return model.User{}, model.ErrNotFound
+				},
+			}
+
+			uc := NewUserUsecase(userRepo, nil, nil)
+
+			_, err := uc.UpdateTransaction(1, 2, UpdateTransaction{decimal.NewFromInt(2000)})
+			assert.True(t, errors.Is(err, model.ErrNotFound))
+			assert.EqualError(t, err, "find user[1] not found")
+		})
+
+		t.Run("find transaction fail", func(t *testing.T) {
+			userRepo := &mock.FakeUserRepo{
+				FindByIDHook: func(userID uint) (model.User, error) {
+					if userID == 1 {
+						return model.User{
+							1, "Alice",
+						}, nil
+					}
+
+					return model.User{}, model.ErrNotFound
+				},
+			}
+
+			tranRepo := &mock.FakeTransactionRepo{
+				FindByIDHook: func(tranID uint) (model.Transaction, error) {
+					return model.Transaction{}, model.ErrNotFound
+				},
+			}
+
+			uc := NewUserUsecase(userRepo, nil, tranRepo)
+
+			_, err := uc.UpdateTransaction(1, 2, UpdateTransaction{decimal.NewFromInt(2000)})
+			assert.True(t, errors.Is(err, model.ErrNotFound))
+			assert.EqualError(t, err, "find transaction[2] not found")
+		})
+
+		t.Run("find account fail", func(t *testing.T) {
+			userRepo := &mock.FakeUserRepo{
+				FindByIDHook: func(userID uint) (model.User, error) {
+					if userID == 1 {
+						return model.User{
+							1, "Alice",
+						}, nil
+					}
+
+					return model.User{}, model.ErrNotFound
+				},
+			}
+
+			tranRepo := &mock.FakeTransactionRepo{
+				FindByIDHook: func(tranID uint) (model.Transaction, error) {
+					if tranID == 2 {
+						return model.Transaction{
+							ID:              2,
+							AccountID:       3,
+							Amount:          decimal.NewFromInt(1000),
+							TransactionType: model.TransactionTypeDeposit,
+							CreatedAt:       "2020-02-10 20:10:00 +0700",
+						}, nil
+					}
+
+					return model.Transaction{}, model.ErrNotFound
+				},
+				UpdateHook: func(t *model.Transaction) error {
+					return nil
+				},
+			}
+
+			accountRepo := &mock.FakeAccountRepo{
+				FindByUserHook: func(userID uint) ([]model.Account, error) {
+					return nil, fmt.Errorf("internal error")
+				},
+			}
+
+			uc := NewUserUsecase(userRepo, accountRepo, tranRepo)
+
+			_, err := uc.UpdateTransaction(1, 2, UpdateTransaction{decimal.NewFromInt(2000)})
+			assert.EqualError(t, err, "internal error")
+		})
+
+		t.Run("invalid transaction", func(t *testing.T) {
+			userRepo := &mock.FakeUserRepo{
+				FindByIDHook: func(userID uint) (model.User, error) {
+					if userID == 1 {
+						return model.User{
+							1, "Alice",
+						}, nil
+					}
+
+					return model.User{}, model.ErrNotFound
+				},
+			}
+
+			tranRepo := &mock.FakeTransactionRepo{
+				FindByIDHook: func(tranID uint) (model.Transaction, error) {
+					if tranID == 2 {
+						return model.Transaction{
+							ID:              2,
+							AccountID:       4,
+							Amount:          decimal.NewFromInt(1000),
+							TransactionType: model.TransactionTypeDeposit,
+							CreatedAt:       "2020-02-10 20:10:00 +0700",
+						}, nil
+					}
+
+					return model.Transaction{}, model.ErrNotFound
+				},
+				UpdateHook: func(t *model.Transaction) error {
+					return nil
+				},
+			}
+
+			accountRepo := &mock.FakeAccountRepo{
+				FindByUserHook: func(userID uint) ([]model.Account, error) {
+					if userID == 1 {
+						return []model.Account{
+							{
+								ID:     3,
+								UserID: 1,
+								Name:   "PHAN THANH CONG",
+								Bank:   "ACB",
+							},
+						}, nil
+					}
+
+					return nil, nil
+				},
+			}
+
+			uc := NewUserUsecase(userRepo, accountRepo, tranRepo)
+
+			_, err := uc.UpdateTransaction(1, 2, UpdateTransaction{decimal.NewFromInt(2000)})
+			assert.True(t, errors.Is(err, model.ErrInvalid))
+			assert.EqualError(t, err, "transaction[2] invalid")
+		})
+
+		t.Run("something wrong when persisting transaction", func(t *testing.T) {
+			userRepo := &mock.FakeUserRepo{
+				FindByIDHook: func(userID uint) (model.User, error) {
+					if userID == 1 {
+						return model.User{
+							1, "Alice",
+						}, nil
+					}
+
+					return model.User{}, model.ErrNotFound
+				},
+			}
+
+			tranRepo := &mock.FakeTransactionRepo{
+				FindByIDHook: func(tranID uint) (model.Transaction, error) {
+					if tranID == 2 {
+						return model.Transaction{
+							ID:              2,
+							AccountID:       3,
+							Amount:          decimal.NewFromInt(1000),
+							TransactionType: model.TransactionTypeDeposit,
+							CreatedAt:       "2020-02-10 20:10:00 +0700",
+						}, nil
+					}
+
+					return model.Transaction{}, model.ErrNotFound
+				},
+				UpdateHook: func(t *model.Transaction) error {
+					return fmt.Errorf("internal error")
+				},
+			}
+
+			accountRepo := &mock.FakeAccountRepo{
+				FindByUserHook: func(userID uint) ([]model.Account, error) {
+					if userID == 1 {
+						return []model.Account{
+							{
+								ID:     3,
+								UserID: 1,
+								Name:   "PHAN THANH CONG",
+								Bank:   "ACB",
+							},
+						}, nil
+					}
+
+					return nil, nil
+				},
+			}
+
+			uc := NewUserUsecase(userRepo, accountRepo, tranRepo)
+
+			_, err := uc.UpdateTransaction(1, 2, UpdateTransaction{decimal.NewFromInt(2000)})
+			assert.EqualError(t, err, "update transaction[2] internal error")
 		})
 	})
 }
