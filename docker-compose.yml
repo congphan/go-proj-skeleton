@@ -1,0 +1,42 @@
+# Used for development
+version: '3.1'
+
+services:
+
+  db:
+    image: postgres:11.5
+    restart: always
+    volumes:
+     - pgmoneyforward:/var/lib/postgresql/data
+    ports:
+     - 5432
+    environment:
+      POSTGRES_PASSWORD: moneyforward@123
+      POSTGRES_USER: admin
+      POSTGRES_DB: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5      
+
+  adminer:
+    image: adminer:4.7.3
+    restart: always
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - 18080:8080
+    
+  challenge-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 50051:8080
+    depends_on:
+      - "db"
+    restart: on-failure
+    
+volumes:
+  pgmoneyforward:    
