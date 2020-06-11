@@ -3,7 +3,6 @@ package postgre
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/go-pg/pg/v9"
@@ -91,7 +90,7 @@ func (repo transactionRepo) FindByUserAccount(userID, accountID int) ([]model.Tr
 
 func (repo transactionRepo) Create(t *model.Transaction) error {
 	tran := transaction{
-		ID:              int(rand.Int31()),
+		ID:              int(time.Now().Unix()),
 		AccountID:       t.AccountID,
 		UserID:          t.UserID,
 		Amount:          t.Amount,

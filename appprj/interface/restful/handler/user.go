@@ -2,6 +2,8 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -67,12 +69,31 @@ type erroMessage struct {
 	Error string `json:"error"`
 }
 
+func Error(w http.ResponseWriter, err error) {
+	msg := erroMessage{
+		err.Error(),
+	}
+
+	code := http.StatusInternalServerError
+	switch true {
+	case errors.Is(err, model.ErrInvalid):
+		code = http.StatusBadRequest
+	case errors.Is(err, model.ErrNotFound):
+		code = http.StatusNotFound
+	case errors.Is(err, model.ErrTransactionTypeInvalid):
+		code = http.StatusBadRequest
+	}
+
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(code)
+	fmt.Fprintln(w, string(jsonutil.Marshal(msg)))
+}
+
 func (h userHandler) FindTransactions(w http.ResponseWriter, r *http.Request) {
 	strUserID := pat.Param(r, "user_id")
 	userID, err := strconv.ParseInt(strUserID, 10, 32)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(jsonutil.Marshal(erroMessage{err.Error()}))
+		Error(w, err)
 		return
 	}
 
@@ -81,8 +102,7 @@ func (h userHandler) FindTransactions(w http.ResponseWriter, r *http.Request) {
 	if strAccountID != "" {
 		accID, err := strconv.ParseInt(strAccountID, 10, 32)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(jsonutil.Marshal(erroMessage{err.Error()}))
+			Error(w, err)
 			return
 		}
 
@@ -92,15 +112,13 @@ func (h userHandler) FindTransactions(w http.ResponseWriter, r *http.Request) {
 
 	trans, err := h.userUsecase.FindTransactions(int(userID), accountID)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(jsonutil.Marshal(erroMessage{err.Error()}))
+		Error(w, err)
 		return
 	}
 
 	bytes, err := json.Marshal(toTransactions(trans))
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(jsonutil.Marshal(erroMessage{err.Error()}))
+		Error(w, err)
 		return
 	}
 
@@ -112,15 +130,13 @@ func (h userHandler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	pUserID, err := strconv.ParseInt(strUserID, 10, 32)
 	userID := int(pUserID)
 	if err != nil {
-		w.Write(jsonutil.Marshal(erroMessage{err.Error()}))
-		w.WriteHeader(http.StatusBadRequest)
+		Error(w, err)
 		return
 	}
 
 	payl := createTransaction{}
 	if err := json.NewDecoder(r.Body).Decode(&payl); err != nil {
-		w.Write(jsonutil.Marshal(erroMessage{err.Error()}))
-		w.WriteHeader(http.StatusBadRequest)
+		Error(w, err)
 		return
 	}
 
@@ -130,20 +146,18 @@ func (h userHandler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		TransactionType: payl.TransactionType,
 	})
 	if err != nil {
-		w.Write(jsonutil.Marshal(erroMessage{err.Error()}))
-		w.WriteHeader(http.StatusInternalServerError)
+		Error(w, err)
 		return
 	}
 
 	bytes, err := json.Marshal(toTransaction(*createdTran))
 	if err != nil {
-		w.Write(jsonutil.Marshal(erroMessage{err.Error()}))
-		w.WriteHeader(http.StatusInternalServerError)
+		Error(w, err)
 		return
 	}
 
-	w.Write(bytes)
 	w.WriteHeader(http.StatusCreated)
+	w.Write(bytes)
 }
 
 func (h userHandler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
