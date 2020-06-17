@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e
 
-if [ "$1" = 'app' ]; then
+if [ "$1" = 'project' ]; then
     ./pgmigrate -database postgres://admin:moneyforward@123@db:5432/postgres?sslmode=disable -path db/migrations up
-    ./app
+    ./project
 fi
 
 #exec "$@"

@@ -7,10 +7,10 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"go-prj-skeleton/appprj/interface/restful"
-	"go-prj-skeleton/appprj/pgutil"
-	"go-prj-skeleton/appprj/registry"
-	"go-prj-skeleton/appprj/setting"
+	"go-prj-skeleton/app/interface/restful"
+	"go-prj-skeleton/app/pgutil"
+	"go-prj-skeleton/app/registry"
+	"go-prj-skeleton/app/setting"
 )
 
 func main() {
