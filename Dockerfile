@@ -13,7 +13,7 @@ WORKDIR /go/src/project
 RUN go mod download
 
 COPY . /go/src/project
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-w" -a -o /project .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-w" -a -o /project ./cmd/srv/...
 
 FROM alpine:3.10.2
 RUN apk --no-cache add ca-certificates
