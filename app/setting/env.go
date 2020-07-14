@@ -17,7 +17,7 @@ type envSettings struct {
 	PrintEnvs string `envconfig:"gohelpers_print_envs" default:""`
 
 	// PostgreSql
-	PostgreHost           string `envconfig:"postgre_host" default:"db"`
+	PostgreHost           string `envconfig:"postgre_host" default:"localhost"`
 	PostgrePort           string `envconfig:"postgre_port" default:"5432"`
 	PostgreUser           string `envconfig:"postgre_user" default:"admin"`
 	PostgrePassword       string `envconfig:"postgre_password" default:"moneyforward@123"`

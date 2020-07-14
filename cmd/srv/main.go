@@ -41,9 +41,12 @@ func main() {
 		Addr:    ":" + port,
 		Handler: restful.Handlers(ctn),
 	}
+
+	fmt.Printf("starting server on port: %s\n", port)
 	if err := server.ListenAndServe(); err != nil {
 		fmt.Printf("start sever fail: %s", err.Error())
 	}
+
 }
 
 func initEnvSettings() {
