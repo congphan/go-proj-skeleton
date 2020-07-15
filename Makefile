@@ -13,10 +13,10 @@ migrate-tool:
 	git clone --recursive https://github.com/golang-migrate/migrate.git ${GOPATH}/src/github.com/golang-migrate/migrate
 	cd ${GOPATH}/src/github.com/golang-migrate/migrate/cmd/migrate;\
 	git checkout v4.11.0;\
-	CGO_ENABLED=0 go build -tags 'postgres' -ldflags="-X main.Version=$(git describe --tags)" -a -o ${GOPATH}/bin/pgmigrate .
+	CGO_ENABLED=0 go build -tags 'mysql' -ldflags="-X main.Version=$(git describe --tags)" -a -o ${GOPATH}/bin/mysqlmigrate .
 
 migrate:
-	pgmigrate -database postgres://admin:moneyforward@123@localhost:5432/postgres?sslmode=disable -path db/migrations up
+	mysqlmigrate -database mysql://admin:moneyforward@123@\(localhost:3306\)/asset_accounting?multiStatements=true -path db/migrations up
 	
 build:
 	go build -o project ${SRC_PATH}/cmd/srv/...

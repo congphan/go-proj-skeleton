@@ -2,25 +2,37 @@
 version: '3.1'
 
 services:
+  # db:
+  #   image: postgres:11.5
+  #   restart: always
+  #   volumes:
+  #     - pgmoneyforward:/var/lib/postgresql/data
+  #   ports:
+  #     - 5432:5432
+  #   environment:
+  #     POSTGRES_PASSWORD: moneyforward@123
+  #     POSTGRES_USER: admin
+  #     POSTGRES_DB: postgres
+  #   healthcheck:
+  #     test: ['CMD-SHELL', 'pg_isready -U postgres']
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
   db:
-    image: postgres:11.5
+    image: mysql:8.0.21
     restart: always
     volumes:
-      - pgmoneyforward:/var/lib/postgresql/data
+      - mysqlmoneyforward:/var/lib/mysql
     ports:
-      - 5432:5432
+      - 3306:3306
     environment:
-      POSTGRES_PASSWORD: moneyforward@123
-      POSTGRES_USER: admin
-      POSTGRES_DB: postgres
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      MYSQL_ROOT_PASSWORD: root@123
+      MYSQL_PASSWORD: moneyforward@123
+      MYSQL_USER: admin
+      MYSQL_DATABASE: asset_accounting
 
   adminer:
-    image: adminer:4.7.3
+    image: adminer:4.7.7
     restart: always
     environment:
       ADMINER_DEFAULT_SERVER: db
@@ -29,3 +41,4 @@ services:
 
 volumes:
   pgmoneyforward:
+  mysqlmoneyforward:
