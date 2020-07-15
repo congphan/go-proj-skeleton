@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 
 	log "github.com/sirupsen/logrus"
 
-	"go-prj-skeleton/app/interface/restful"
+	// "go-prj-skeleton/app/interface/restful"
+	"go-prj-skeleton/app/interface/gin"
 	"go-prj-skeleton/app/pgutil"
 	"go-prj-skeleton/app/registry"
 	"go-prj-skeleton/app/setting"
@@ -36,17 +36,22 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to build container: %v", err)
 	}
+	_ = ctn
+	// server := http.Server{
+	// 	Addr:    ":" + port,
+	// 	Handler: restful.Handlers(ctn),
+	// }
 
-	server := http.Server{
-		Addr:    ":" + port,
-		Handler: restful.Handlers(ctn),
-	}
+	// fmt.Printf("starting server on port: %s\n", port)
+	// if err := server.ListenAndServe(); err != nil {
+	// 	fmt.Printf("start sever fail: %s", err.Error())
+	// }
 
+	handler := gin.Handler()
 	fmt.Printf("starting server on port: %s\n", port)
-	if err := server.ListenAndServe(); err != nil {
+	if err := handler.Run(":" + port); err != nil {
 		fmt.Printf("start sever fail: %s", err.Error())
 	}
-
 }
 
 func initEnvSettings() {
